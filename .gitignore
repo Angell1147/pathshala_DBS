@@ -41,3 +41,4 @@ app-example
 
 api/.env
 api/.venv
+api/__pycache__
