@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
@@ -14,7 +15,6 @@ expo-env.d.ts
 *.jks
 *.p8
 *.p12
-*.key
 *.mobileprovision
 
 # Metro
@@ -27,6 +27,8 @@ yarn-error.*
 
 # macOS
 .DS_Store
+.Trash/
+.CFUserTextEncoding
 *.pem
 
 # local env files
