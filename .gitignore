@@ -2,6 +2,9 @@
 # database files
 database_setup/
 
+#python venv
+classroom_finder/
+
 # dependencies
 node_modules/
 
