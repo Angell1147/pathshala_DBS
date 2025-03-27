@@ -3,11 +3,13 @@ from flask import Flask, jsonify
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from flask_cors import CORS  # Import CORS
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Get Supabase credentials from .env
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -28,7 +30,6 @@ def get_current_time():
 def get_all_time_slots():
     # Call the stored function in Supabase
     response = supabase.rpc("get_custom_users").execute()
-
     if response.data:
         return jsonify(response.data)
     else:
@@ -42,8 +43,6 @@ def get_free_time_slots():
         return jsonify(response.data)
     else:
         return jsonify({"error": "No data found or function error"}), 400
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
