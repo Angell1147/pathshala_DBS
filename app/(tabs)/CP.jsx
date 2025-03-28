@@ -98,11 +98,10 @@ export default function TabTwoScreen() {
         renderItem={({ item }) => (
           <View style={styles.classroomCard}>
             <Text style={styles.cardText}>
-              Classroom ID: {item.classroom_id}
+            {item.classroom_id} {item.day}
             </Text>
-            <Text style={styles.cardText}>Day: {item.day}</Text>
-            <Text style={styles.cardText}>Start: {item.free_start}</Text>
-            <Text style={styles.cardText}>End: {item.free_end}</Text>
+            <br></br>
+            <Text style={styles.cardText}>{item.free_start} - {item.free_end}</Text>
           </View>
         )}
       />

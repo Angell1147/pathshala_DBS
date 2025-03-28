@@ -38,7 +38,7 @@ export const FetchDProvider = ({ children }: { children: ReactNode }) => {
   const isWithinTimeSlot = (slot: Slot, timeSlot: string) => {
     if (timeSlot === "All") return true;
     const [start, end] = timeSlot.split("-"); // Example: "8:30-9:30"
-    return slot.free_start <= start + ":00" && slot.free_end >= end + ":00";
+    return slot.free_start <= start && slot.free_end >= end ;
   };
 
   // Apply filters
