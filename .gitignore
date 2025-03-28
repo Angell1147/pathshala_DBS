@@ -3,7 +3,7 @@
 database_setup/
 
 #python venv
-classroom_finder/
+classroom_finder/w
 
 # dependencies
 node_modules/

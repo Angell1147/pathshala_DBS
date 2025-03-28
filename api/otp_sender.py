@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import os
+import certifi
 load_dotenv()
 
 class Otp_sender:
@@ -28,7 +29,7 @@ class Otp_sender:
         msg.attach(MIMEText(body, "plain"))
         
         # Send email using SMTP
-        context = ssl.create_default_context()
+        context = ssl.create_default_context(cafile=certifi.where())
         with smtplib.SMTP(self.SMTP_SERVER, self.SMTP_PORT) as server:
             server.starttls(context=context)
             server.login(self.EMAIL_ADDRESS, self.EMAIL_PASSWORD)
