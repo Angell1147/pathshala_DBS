@@ -26,6 +26,15 @@ def hello_world():
 def get_current_time():
     return {'time': time.time(), 'message': os.getenv('FLASK_APP')}
 
+@app.route("/Batches", methods=["GET"])
+def get_free_time_slots_batch():
+    response = supabase.rpc("batches").execute()
+    # print(response)  # Log the response object to see the data
+    if response.data:
+        return jsonify(response.data)
+    else:
+        return jsonify({"error": "No data found or function error"}), 400
+
 @app.route('/allTimeSlots')
 def get_all_time_slots():
     # Call the stored function in Supabase
@@ -35,14 +44,18 @@ def get_all_time_slots():
     else:
         return jsonify({"error": "No data found or function error"}), 400
     
-@app.route("/freeTimeSlots", methods=["GET"])
+@app.route("/Classroom", methods=["GET"])
 def get_free_time_slots():
     # Call the `get_free_time_slots()` function from Supabase
-    response = supabase.rpc("get_free_time_slots").execute()
+    response = supabase.rpc("get_free_time_slots_for_classrooms").execute()
+    # print(response)
     if response.data:
         return jsonify(response.data)
     else:
         return jsonify({"error": "No data found or function error"}), 400
+    
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
