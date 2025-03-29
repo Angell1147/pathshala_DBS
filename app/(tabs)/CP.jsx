@@ -4,11 +4,17 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  Image,
+  Pressable,
+  ScrollView,
 } from "react-native";
 import React, { useContext, useState } from "react";
 import { FetchD } from "@/context/FetchD";
+import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 
 export default function TabTwoScreen() {
+  const router = useRouter();
   const fetchDContext = useContext(FetchD);
 
   if (!fetchDContext) {

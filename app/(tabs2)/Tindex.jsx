@@ -11,11 +11,15 @@ import React from 'react';
 export default function HomeScreen() {
   return (
       <ThemedView style={styles.container}>
-        <Link href='/login' asChild>
+        <Link href='/' asChild>
           <Pressable style={{ position: "absolute", top: 20, right: 20 }}>
-            <Image source={require('@/assets/images/login-icon2.png')} style={{ width: 30, height: 30 }} />
+            <Image source={require('@/assets/images/logout-icon.png')} style={{ width: 30, height: 30 }} />
           </Pressable>
         </Link>
+
+        <ThemedText style={{ fontSize: 30, marginBottom: 20 }}>
+          Teacher's Portal
+        </ThemedText>
 
         <Link href='/CP' style = {{marginHorizontal: 'auto'}} asChild>
           <Pressable style = {styles.button}>
@@ -25,7 +29,7 @@ export default function HomeScreen() {
           </Pressable>
         </Link>
 
-        <Link href='/TT' style = {{marginHorizontal: 'auto'}} asChild>
+        <Link href='/TT2' style = {{marginHorizontal: 'auto'}} asChild>
           <Pressable style = {styles.button}>
             <ThemedText style = {styles.buttonText}>
               Time Table
@@ -37,6 +41,15 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  
+  reactLogo: {
+    height: 178,
+    width: 290,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+  },
+
   container: {
     flex: 1,
     justifyContent: 'center',

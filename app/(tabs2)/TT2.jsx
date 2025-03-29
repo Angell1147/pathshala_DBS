@@ -1,15 +1,21 @@
-import { StyleSheet, View, Text, TouchableOpacity, FlatList, ScrollView, Modal, TextInput, Button, Image, Platform, Pressable } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, FlatList, ScrollView, Modal, TextInput, Button, Image, Platform } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import {FetchD} from '@/context/FetchD';
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Link } from 'expo-router';
 
 export default function TimeTableScreen() {
-   
+    const fetchDContext = useContext(FetchD);
+
+    if (!fetchDContext) {
+      return <Text>Loading...</Text>;
+    }
+  
+    const { filteredSlots } = fetchDContext;
     const [selectedClassroom, setSelectedClassroom] = useState(null);
     const [isClassroomDropdownOpen, setIsCLassroomDropdownOpen] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null);
@@ -31,6 +37,33 @@ export default function TimeTableScreen() {
       "16:30 - 17:30",
       "17:30 - 18:30"
     ];
+    // Modal State
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState(null);
+    const [batchID, setBatchID] = useState("");
+
+    // Open Modal with Selected Slot Info
+    const openModal = (day, slot) => {
+        const [start_time, end_time] = slot.split(" - ");
+        setSelectedSlot({ day, start_time, end_time });
+        setModalVisible(true);
+    };
+
+    // Handle Scheduling
+    const handleSchedule = () => {
+        if (!batchID.trim()) return;
+
+        const requestData = {
+        day: selectedSlot.day,
+        start_time: selectedSlot.start_time,
+        end_time: selectedSlot.end_time,
+        batchID,
+        };
+
+        console.log("Sending to backend:", requestData); // Replace with actual API call
+        setModalVisible(false);
+        setBatchID(""); // Reset batch input
+    };
 
     useEffect(() => {
       if (selectedClassroom && selectedBatch) {
@@ -50,7 +83,6 @@ export default function TimeTableScreen() {
   
   return (
     <View style={styles.container}>
-      
         <ThemedText style={styles.title}>Time Table</ThemedText>
         <TouchableOpacity
         style={styles.dropdownButton}
@@ -125,27 +157,55 @@ export default function TimeTableScreen() {
             <View key={rowIndex} style={styles.gridRow}>
               <Text style={styles.timeSlotCell}>{slot}</Text>
               {days.map((day, colIndex) => {
-                const entry = timetable.find(
+                const entry = filteredSlots.find(
                   item => item.day === day && item.start_time === slot.split(" - ")[0]
                 );
 
                 return (
-                  <View key={colIndex} style={styles.gridCell}>
+                  <TouchableOpacity 
+                    key={colIndex} 
+                    style={styles.gridCell}
+                    onPress={() => openModal(day, slot)}>
                     {entry ? (
                       <>
                         <Text style={styles.subjectText}>{entry.subject_id}</Text>
                         <Text style={styles.teacherText}>{entry.teacher_id}</Text>
                       </>
                     ) : (
-                      <Text style={styles.emptyCell}></Text>
+                      <Text style={styles.emptyCell}>+</Text>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
           ))}
         </View>
       </ScrollView>
+
+      {/* Modal for Scheduling */}
+      <Modal 
+        transparent={true} 
+        visible={modalVisible} 
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+    >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Schedule a Batch</Text>
+            <Text>Day: {selectedSlot?.day}</Text>
+            <Text>Time: {selectedSlot?.start_time} - {selectedSlot?.end_time}</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Batch ID"
+              value={batchID}
+              onChangeText={setBatchID}
+            />
+            <Button title="Schedule" onPress={handleSchedule} />
+            <Button title="Cancel" color="red" padding='10' onPress={() => setModalVisible(false)} />
+          </View>
+        </View>
+      </Modal>
     </View>
 
     
@@ -262,7 +322,31 @@ const styles = StyleSheet.create({
     emptyCell: {
       height: "100%",
       width: "100%",
-    }
+    },
+    modalOverlay: { 
+        flex: 1, 
+        justifyContent: "center", 
+        alignItems: "center", 
+        backgroundColor: "rgba(0,0,0,0.5)" 
+    },
+    modalContent: { 
+        backgroundColor: "white", 
+        padding: 20, 
+        borderRadius: 10, 
+        width: "80%", 
+        alignItems: "center" 
+    },
+    modalTitle: { 
+        fontSize: 18, 
+        fontWeight: "bold", 
+        marginBottom: 10 
+    },
+    input: { 
+        width: "100%", 
+        borderWidth: 1, 
+        padding: 10, 
+        marginVertical: 10, 
+        borderRadius: 5 
+    },
   });
   
-

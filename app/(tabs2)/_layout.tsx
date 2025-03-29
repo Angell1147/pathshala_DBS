@@ -13,7 +13,7 @@ import { usePathname } from 'expo-router';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
-  const hideTabBarRoutes = ['/login', '/TT', '/CP', '/'];
+  const hideTabBarRoutes = ['/Tindex', '/CP2', '/TT2'];
 
   return (
     <Tabs
@@ -21,19 +21,18 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
         tabBarStyle: hideTabBarRoutes.includes(pathname)
-          ? { display: 'none' } // Hide the tab bar
-          : Platform.select({
-              ios: {
-                // Use a transparent background on iOS to show the blur effect
-                position: 'absolute',
-              },
-              default: {},
-            }),
+            ? { display: 'none' } // Hide the tab bar
+            : Platform.select({
+                ios: {
+                    // Use a transparent background on iOS to show the blur effect
+                    position: 'absolute',
+                },
+                default: {},
+                }),
       }}>
       <Tabs.Screen
-        name="index"
+        name="Tindex"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
