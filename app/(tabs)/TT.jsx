@@ -52,7 +52,10 @@ export default function TimeTableScreen() {
         <ThemedText style={styles.title}>Time Table</ThemedText>
         <TouchableOpacity
         style={styles.dropdownButton}
-        onPress={() => setIsCLassroomDropdownOpen(!isClassroomDropdownOpen)}
+        onPress={() => {
+          setIsCLassroomDropdownOpen(!isClassroomDropdownOpen);
+          setIsBatchDropdownOpen(false);
+        }}
       >
         <Text style={styles.dropdownButtonText}>
           {selectedClassroom ? selectedClassroom : 'Select a Classroom'}
@@ -78,7 +81,10 @@ export default function TimeTableScreen() {
 
       <TouchableOpacity
         style={styles.dropdownButton}
-        onPress={() => setIsBatchDropdownOpen(!isBatchDropdownOpen)}
+        onPress={() => {
+          setIsBatchDropdownOpen(!isBatchDropdownOpen);
+          setIsCLassroomDropdownOpen(false);
+        }}
       >
         <Text style={styles.dropdownButtonText}>
           {selectedClassroom ? selectedClassroom : 'Select a Batch'}
@@ -92,7 +98,7 @@ export default function TimeTableScreen() {
               key={index}
               style={styles.slotItem}
               onPress={() => {
-                selectedBatch(batch);
+                setSelectedBatch(batch);
                 setIsBatchDropdownOpen(false);
               }}
             >

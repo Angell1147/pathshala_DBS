@@ -32,12 +32,15 @@ export default function TabTwoScreen() {
       <Text style={styles.title}>Classroom Picker</Text>
 
       {/* Filter Dropdowns */}
-      <View style={styles.dropdownRow}>
+      <View>
         {/* Filter by Classroom Dropdown */}
-        <View style={styles.dropdownWrapper}>
+        <View>
           <TouchableOpacity
             style={styles.dropdownButton}
-            onPress={() => setIsClassroomDropdownOpen(!isClassroomDropdownOpen)}
+            onPress={() => {
+              setIsClassroomDropdownOpen(!isClassroomDropdownOpen);
+              setIsDayDropdownOpen(false);
+            }}
           >
             <Text style={styles.dropdownButtonText}>{selectedClassroom}</Text>
           </TouchableOpacity>
@@ -64,7 +67,10 @@ export default function TabTwoScreen() {
         <View style={styles.dropdownWrapper}>
           <TouchableOpacity
             style={styles.dropdownButton}
-            onPress={() => setIsDayDropdownOpen(!isDayDropdownOpen)}
+            onPress={() => {
+              setIsDayDropdownOpen(!isDayDropdownOpen);
+              setIsClassroomDropdownOpen(false);
+            }}
           >
             <Text style={styles.dropdownButtonText}>{selectedDay}</Text>
           </TouchableOpacity>
@@ -110,7 +116,11 @@ export default function TabTwoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#DCEDF0" },
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: "#DCEDF0" 
+  },
   title: {
     fontSize: 30,
     marginBottom: 10,
@@ -119,37 +129,46 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   dropdownRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "space-between",
+    marginBottom: 10,
     marginBottom: 10,
   },
   dropdownWrapper: {
-    flex: 1,
+    width:"100%",
     marginHorizontal: 5,
+    position: "relative",
   },
   dropdownButton: {
-    width: "100%",
+    width: '100%',
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: "gray",
+    borderColor: 'gray',
     borderRadius: 8,
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 10,
-    alignItems: "center",
+    alignItems: 'center',
   },
-  dropdownButtonText: { fontSize: 16, color: "black" },
+  dropdownButtonText: { 
+    fontSize: 16, 
+    color: "black" 
+  },
   dropdownContainer: {
-    backgroundColor: "white",
+    marginBottom: 10,
+    backgroundColor: 'white',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "gray",
-    marginTop: 5,
+    borderColor: 'gray',
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "lightgray",
   },
-  dropdownItemText: { fontSize: 16, textAlign: "center" },
+  dropdownItemText: { 
+    fontSize: 16,
+    textAlign: "center" 
+  },
   availableClassroomsText: {
     fontSize: 20,
     color: "#59788E",
