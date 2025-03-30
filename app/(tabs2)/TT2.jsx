@@ -80,14 +80,14 @@ export default function TimeTableScreen() {
         if (!sessionId) throw new Error("No session token");
 
         const [sessionResponse, profileResponse] = await Promise.all([
-          fetch("http://192.168.0.210:5000/verify_session", {
+          fetch("http://127.0.0.1:5000/verify_session", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${sessionId}`,
             },
           }),
-          fetch("http://192.168.0.210:5000/teacher_profile", {
+          fetch("http://127.0.0.1:5000/teacher_profile", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -152,7 +152,7 @@ export default function TimeTableScreen() {
       if (!sessionId) throw new Error("No session token");
 
       // Fetch fresh data
-      const response = await fetch("http://192.168.0.210:5000/allTimeSlots", {
+      const response = await fetch("http://127.0.0.1:5000/allTimeSlots", {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
@@ -255,7 +255,7 @@ export default function TimeTableScreen() {
       };
       console.log("Request Body:", requestBody);
 
-      const response = await fetch("http://192.168.0.210:5000/add_time_slot", {
+      const response = await fetch("http://127.0.0.1:5000/add_time_slot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +290,7 @@ export default function TimeTableScreen() {
   const logout = async () => {
     try {
       await AsyncStorage.removeItem("session_token");
-      await fetch("http://192.168.0.210:5000/logout", {
+      await fetch("http://127.0.0.1:5000/logout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

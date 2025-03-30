@@ -29,16 +29,13 @@ export default function TabTwoScreen() {
         const sessionId = await AsyncStorage.getItem("session_token");
         if (!sessionId) throw new Error("No session token");
 
-        const response = await fetch(
-          "http://192.168.0.210:5000/verify_session",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${sessionId}`,
-            },
-          }
-        );
+        const response = await fetch("http://127.0.0.1:5000/verify_session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionId}`,
+          },
+        });
 
         if (!response.ok) throw new Error("Session verification failed");
         setSessionVerified(true);
@@ -56,7 +53,7 @@ export default function TabTwoScreen() {
   const logout = async () => {
     try {
       await AsyncStorage.removeItem("session_token");
-      await fetch("http://192.168.0.210:5000/logout", {
+      await fetch("http://127.0.0.1:5000/logout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

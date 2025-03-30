@@ -50,7 +50,7 @@ export const FetchDProvider = ({ children }: { children: ReactNode }) => {
   const [selectedBatch, setSelectedBatch] = useState<string>("All");
 
   useEffect(() => {
-    fetch("http://192.168.0.210:5000/Batches")
+    fetch("http://127.0.0.1:5000/Batches")
       .then((response) => response.json())
       .then((data: Slot[]) => {
         setFreeBatchSlots(data);
@@ -60,7 +60,7 @@ export const FetchDProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    fetch("http://192.168.0.210:5000/Classroom")
+    fetch("http://127.0.0.1:5000/Classroom")
       .then((response) => response.json())
       .then((data: Slot[]) => {
         setFreeSlots(data);
@@ -70,7 +70,7 @@ export const FetchDProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    fetch("http://192.168.0.210:5000/allTimeSlots")
+    fetch("http://127.0.0.1:5000/allTimeSlots")
       .then((response) => response.json())
       .then((data: Slot[]) => {
         // console.log("Fetched booked slots:", data);
