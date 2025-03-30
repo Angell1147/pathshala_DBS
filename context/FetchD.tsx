@@ -1,3 +1,4 @@
+// context for fetching data from the server
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 
 interface FetchDContextType {

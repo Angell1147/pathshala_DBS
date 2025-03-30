@@ -2,7 +2,6 @@ import { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
-
 const BACKEND_URL = process.env.BACKEND_URL;
 export default function LoginScreen() {
   const router = useRouter();
@@ -10,7 +9,7 @@ export default function LoginScreen() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const BACKEND_URL="http://127.0.0.1:5000"
+  const BACKEND_URL = "http://192.168.0.210:5000";
 
   // Function to send OTP
   const handleSendOTP = async () => {
@@ -79,9 +78,7 @@ export default function LoginScreen() {
       />
 
       {/* Send OTP Button (only visible before OTP is sent) */}
-      {!otpSent && (
-        <Button title="Send OTP" onPress={handleSendOTP} />
-      )}
+      {!otpSent && <Button title="Send OTP" onPress={handleSendOTP} />}
 
       {/* OTP Input (only visible after OTP is sent) */}
       {otpSent && (
