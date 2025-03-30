@@ -8,8 +8,8 @@ from flask_session import Session
 from otp_sender import Otp_sender
 import random
 import secrets
-import uuid
 from datetime import datetime, timedelta
+import redis
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +24,7 @@ app.config["SESSION_TYPE"] = "redis"  # Use Redis for session storage
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_USE_SIGNER"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)  # Token valid for 7 days
+app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 Session(app)
 
 # Get Supabase credentials from .env
@@ -106,11 +107,11 @@ def generate_otp():
         return jsonify({"error": "Email is not authenticated"}), 400
     
     generated_otp = random.randint(100000, 999999)
-    otp_storage[email] = "123456"
+    otp_storage[email] = generated_otp  # Store OTP in memory (or use Redis/database in production)
     
     try:
-        # otp_sender = Otp_sender(email, generated_otp)
-        # otp_sender.send_email()
+        otp_sender = Otp_sender(email, generated_otp)
+        otp_sender.send_email()
         return jsonify({"success": True, "message": "OTP sent successfully"})
     except Exception as e:
         app.logger.error(f"Error sending OTP: {str(e)}")

@@ -17,9 +17,9 @@ import React, { useState, useEffect, useContext, useCallback } from "react";
 import { FetchD } from "@/context/FetchD";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, Link } from "expo-router";
+import { useFocusEffect } from "expo-router";
 
 export default function TimeTableScreen() {
-  // ... (keep all previous state and constants declarations)
   const { width } = Dimensions.get("window");
   const router = useRouter();
   const fetchDContext = useContext(FetchD);
@@ -55,7 +55,9 @@ export default function TimeTableScreen() {
   const [showClassroomDropdown, setShowClassroomDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
 
-  // ... (keep all previous effects and helper functions)
+  // Add state to force re-render
+  const [renderKey, setRenderKey] = useState(Date.now());
+
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   const TIME_SLOTS = [
     "08:30 - 09:30",
@@ -135,11 +137,52 @@ export default function TimeTableScreen() {
         : bookedSlots.filter((s) => s.batch_name === selectedBatch);
 
     setTimetable(filtered);
+    // Update render key to force re-render
+    setRenderKey(Date.now());
   }, [viewMode, selectedClassroom, selectedBatch, bookedSlots]);
 
   useEffect(() => {
     updateTimetable();
   }, [updateTimetable]);
+
+  // Function to force re-render all timetable cells
+  const forceRenderAllCells = async () => {
+    try {
+      const sessionId = await AsyncStorage.getItem("session_token");
+      if (!sessionId) throw new Error("No session token");
+
+      // Fetch fresh data
+      const response = await fetch("http://192.168.0.210:5000/allTimeSlots", {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch updated time slots");
+      }
+
+      const updatedData = await response.json();
+
+      // Update context with new data
+      fetchDContext.setBookedSlots(updatedData);
+
+      // Filter based on current view
+      const filtered =
+        viewMode === "classroom"
+          ? updatedData.filter((s) => s.classroom_name === selectedClassroom)
+          : updatedData.filter((s) => s.batch_name === selectedBatch);
+
+      // Update timetable with filtered data
+      setTimetable(filtered);
+
+      // Force re-render by updating the key
+
+      setRenderKey(Date.now());
+    } catch (error) {
+      console.error("Error refreshing timetable:", error);
+    }
+  };
 
   // Helper functions
   const matchesTimeSlot = (slot, timeSlotStr) => {
@@ -174,6 +217,76 @@ export default function TimeTableScreen() {
     setModalVisible(true);
   };
 
+  const handleSchedule = async () => {
+    let errorMessage = "";
+    if (viewMode === "classroom" && !selectedBatchToSchedule) {
+      errorMessage = "Please select a batch";
+    }
+    if (viewMode === "batch" && !selectedClassroom) {
+      errorMessage = "Please select a classroom";
+    }
+    if (!selectedSubject) {
+      errorMessage = "Please select a subject";
+    }
+
+    if (errorMessage) {
+      Alert.alert("Error", errorMessage);
+      return;
+    }
+
+    try {
+      const sessionId = await AsyncStorage.getItem("session_token");
+      if (!sessionId) throw new Error("No session token");
+
+      const requestBody = {
+        start_time: selectedSlot.start_time,
+        end_time: selectedSlot.end_time,
+        day: selectedSlot.day,
+        subject_name: selectedSubject,
+        ...(viewMode === "classroom"
+          ? {
+              classroom_name: selectedClassroom,
+              batch_name: selectedBatchToSchedule,
+            }
+          : {
+              classroom_name: selectedClassroom,
+              batch_name: selectedBatch,
+            }),
+      };
+      console.log("Request Body:", requestBody);
+
+      const response = await fetch("http://192.168.0.210:5000/add_time_slot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        Alert.alert("Error", "Failed to schedule. Please try again.");
+        return;
+      }
+      window.location.reload();
+
+      // Force refresh the timetable data and re-render
+      await forceRenderAllCells();
+
+      // Reset modal state
+      setModalVisible(false);
+      setSelectedBatchToSchedule(null);
+      setSelectedSubject(null);
+
+      Alert.alert("Success", "Slot scheduled successfully.");
+    } catch (error) {
+      console.error("Schedule error:", error);
+      Alert.alert("Error", "Network error. Please try again.");
+    }
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem("session_token");
@@ -194,7 +307,7 @@ export default function TimeTableScreen() {
 
   if (!sessionVerified) return null;
 
-  // Modified modal rendering
+  // Modal dropdowns rendering
   const renderModalDropdowns = () => {
     if (viewMode === "classroom") {
       return (
@@ -275,7 +388,7 @@ export default function TimeTableScreen() {
     }
   };
 
-  // Modified modal subject selection
+  // Modal subject selection
   const renderSubjectDropdown = () => (
     <>
       <TouchableOpacity
@@ -312,71 +425,6 @@ export default function TimeTableScreen() {
     </>
   );
 
-  // Modified handleSchedule function
-  const handleSchedule = async () => {
-    let errorMessage = "";
-    if (viewMode === "classroom" && !selectedBatchToSchedule) {
-      errorMessage = "Please select a batch";
-    }
-    if (viewMode === "batch" && !selectedClassroom) {
-      errorMessage = "Please select a classroom";
-    }
-    if (!selectedSubject) {
-      errorMessage = "Please select a subject";
-    }
-
-    if (errorMessage) {
-      Alert.alert("Error", errorMessage);
-      return;
-    }
-
-    try {
-      const sessionId = await AsyncStorage.getItem("session_token");
-      if (!sessionId) throw new Error("No session token");
-
-      const requestBody = {
-        start_time: selectedSlot.start_time,
-        end_time: selectedSlot.end_time,
-        day: selectedSlot.day,
-        subject_name: selectedSubject,
-        ...(viewMode === "classroom"
-          ? {
-              classroom_name: selectedClassroom,
-              batch_name: selectedBatchToSchedule,
-            }
-          : {
-              classroom_name: selectedClassroom,
-              batch_name: selectedBatch,
-            }),
-      };
-      console.log("Request Body:", requestBody);
-
-      const response = await fetch("http://192.168.0.210:5000/add_time_slot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionId}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        Alert.alert("Error", "Failed to schedule. Please try again.");
-        return;
-      }
-      const data = await response.json();
-      console.log("Schedule response:", data);
-      Alert.alert("Success", "Scheduled successfully!");
-
-      // ... (keep rest of the handleSchedule logic)
-    } catch (error) {
-      Alert.alert("Error", "Network error. Please try again.");
-    }
-  };
-
-  // Update the modal JSX
   return (
     <View style={styles.mainContainer}>
       {/* Header */}
@@ -471,7 +519,7 @@ export default function TimeTableScreen() {
         {/* Timetable Grid */}
         <View style={styles.timetableContainer}>
           <ScrollView horizontal>
-            <View style={styles.grid}>
+            <View style={styles.grid} key={`grid-${renderKey}`}>
               {/* Header Row */}
               <View style={styles.gridRow}>
                 <View style={styles.headerCell}>
@@ -486,7 +534,7 @@ export default function TimeTableScreen() {
 
               {/* Time Slots */}
               {TIME_SLOTS.map((slot) => (
-                <View key={slot} style={styles.gridRow}>
+                <View key={`row-${slot}-${renderKey}`} style={styles.gridRow}>
                   <View style={styles.timeSlotCell}>
                     <Text style={styles.timeSlotText}>{slot}</Text>
                   </View>
@@ -497,7 +545,9 @@ export default function TimeTableScreen() {
 
                     return (
                       <TouchableOpacity
-                        key={`${day}-${slot}`}
+                        key={`${day}-${slot}-${renderKey}-${
+                          entry ? entry.subject_name : "empty"
+                        }`}
                         style={[styles.gridCell, entry && styles.filledCell]}
                         onPress={() => openModal(day, slot)}
                       >
@@ -583,11 +633,7 @@ export default function TimeTableScreen() {
       </Modal>
     </View>
   );
-
-  // ... (keep the rest of the JSX and styles the same)
 }
-
-// ... (keep styles the same)
 
 const styles = StyleSheet.create({
   mainContainer: {
