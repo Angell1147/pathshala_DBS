@@ -19,7 +19,8 @@ app = Flask(__name__)
 CORS(app)
 # Configure Flask-Session with stronger settings
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", secrets.token_hex(32))
-app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_TYPE"] = "redis"  # Use Redis for session storage
+
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_USE_SIGNER"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)  # Token valid for 7 days
