@@ -6,16 +6,28 @@ import {
   FlatList,
   Switch,
   ScrollView,
+  Pressable,
+  Image,
+  Dimensions,
+  Platform,
 } from "react-native";
 import React, { useContext, useState, useEffect } from "react";
 import { FetchD } from "@/context/FetchD";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Link } from "expo-router";
 
 export default function ClassroomPickerScreen() {
+  const { width } = Dimensions.get("window");
+  const router = useRouter();
   const fetchDContext = useContext(FetchD);
-  const [viewMode, setViewMode] = useState("classroom"); // "classroom" or "batch"
+  const [sessionVerified, setSessionVerified] = useState(true);
+
+  // View state
+  const [viewMode, setViewMode] = useState("classroom");
   const [classrooms, setClassrooms] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [timeSlots, setTimeSlots] = useState([
+  const [timeSlots] = useState([
     "All",
     "08:30 - 09:30",
     "09:30 - 10:30",
@@ -40,7 +52,72 @@ export default function ClassroomPickerScreen() {
 
   const days = ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-  // Handle loading state
+  // Session verification
+
+  // Logout function
+
+  // Extract unique classrooms and batches
+  useEffect(() => {
+    if (fetchDContext?.freeSlots) {
+      const uniqueClassrooms = [
+        ...new Set(fetchDContext.freeSlots.map((s) => s.classroom_name)),
+      ];
+      setClassrooms(uniqueClassrooms);
+      if (uniqueClassrooms.length > 0 && !selectedClassroom) {
+        setSelectedClassroomLocal(uniqueClassrooms[0]);
+      }
+    }
+
+    if (fetchDContext?.freeBatchSlots) {
+      const uniqueBatches = [
+        ...new Set(fetchDContext.freeBatchSlots.map((s) => s.batch_name)),
+      ];
+      setBatches(uniqueBatches);
+      if (uniqueBatches.length > 0 && !selectedBatch) {
+        setSelectedBatchLocal(uniqueBatches[0]);
+      }
+    }
+  }, [fetchDContext?.freeSlots, fetchDContext?.freeBatchSlots]);
+
+  // Filter results
+  useEffect(() => {
+    let results = [];
+    const source =
+      viewMode === "classroom"
+        ? fetchDContext?.freeSlots
+        : fetchDContext?.freeBatchSlots;
+
+    if (source) {
+      results = source.filter((slot) => {
+        const classroomMatch =
+          viewMode !== "classroom" ||
+          selectedClassroom === "" ||
+          slot.classroom_name === selectedClassroom;
+        const batchMatch =
+          viewMode !== "batch" ||
+          selectedBatch === "" ||
+          slot.batch_name === selectedBatch;
+        const dayMatch = selectedDay === "All" || slot.day === selectedDay;
+        const timeMatch =
+          selectedTimeSlot === "All" ||
+          (slot.free_start.substring(0, 5) <=
+            selectedTimeSlot.split(" - ")[0] &&
+            slot.free_end.substring(0, 5) >= selectedTimeSlot.split(" - ")[1]);
+
+        return classroomMatch && batchMatch && dayMatch && timeMatch;
+      });
+    }
+
+    setFilteredResults(results || []);
+  }, [
+    viewMode,
+    selectedClassroom,
+    selectedBatch,
+    selectedDay,
+    selectedTimeSlot,
+    fetchDContext,
+  ]);
+
   if (!fetchDContext) {
     return (
       <View style={styles.loadingContainer}>
@@ -49,126 +126,15 @@ export default function ClassroomPickerScreen() {
     );
   }
 
-  // Extract unique classrooms and batches from context
-  useEffect(() => {
-    if (fetchDContext.freeSlots) {
-      const uniqueClassrooms = [
-        ...new Set(fetchDContext.freeSlots.map((slot) => slot.classroom_name)),
-      ];
-      setClassrooms(uniqueClassrooms);
-
-      // Set default classroom selection if available
-      if (uniqueClassrooms.length > 0 && !selectedClassroom) {
-        setSelectedClassroomLocal(uniqueClassrooms[0]);
-      }
-    }
-
-    if (fetchDContext.freeBatchSlots) {
-      const uniqueBatches = [
-        ...new Set(fetchDContext.freeBatchSlots.map((slot) => slot.batch_name)),
-      ];
-      setBatches(uniqueBatches);
-
-      // Set default batch selection if available
-      if (uniqueBatches.length > 0 && !selectedBatch) {
-        setSelectedBatchLocal(uniqueBatches[0]);
-      }
-    }
-  }, [fetchDContext.freeSlots, fetchDContext.freeBatchSlots]);
-
-  // Filter slots based on selections
-  useEffect(() => {
-    let results = [];
-
-    if (viewMode === "classroom" && selectedClassroom) {
-      // Filter from freeSlots for classroom view
-      results = fetchDContext.freeSlots.filter(
-        (slot) => slot.classroom_name === selectedClassroom
-      );
-    } else if (viewMode === "batch" && selectedBatch) {
-      // Filter from freeBatchSlots for batch view
-      results = fetchDContext.freeBatchSlots.filter(
-        (slot) => slot.batch_name === selectedBatch
-      );
-    }
-
-    // Apply day filter
-    if (selectedDay !== "All") {
-      results = results.filter((slot) => slot.day === selectedDay);
-    }
-
-    // Apply time slot filter
-    if (selectedTimeSlot !== "All") {
-      results = results.filter((slot) => {
-        const [startTime, endTime] = selectedTimeSlot.split(" - ");
-        const slotStartTime = slot.free_start.substring(0, 5);
-        const slotEndTime = slot.free_end.substring(0, 5);
-
-        // Check if the selected time slot falls within the free slot's time range
-        return slotStartTime <= startTime && slotEndTime >= endTime;
-      });
-    }
-
-    setFilteredResults(results);
-  }, [
-    viewMode,
-    selectedClassroom,
-    selectedBatch,
-    selectedDay,
-    selectedTimeSlot,
-    fetchDContext.freeSlots,
-    fetchDContext.freeBatchSlots,
-  ]);
-
-  // Toggle between classroom and batch views
+  // Helper functions
   const toggleViewMode = () => {
-    setViewMode((prevMode) =>
-      prevMode === "classroom" ? "batch" : "classroom"
-    );
-    // Close all dropdowns when toggling view
+    setViewMode((prev) => (prev === "classroom" ? "batch" : "classroom"));
     setIsClassroomDropdownOpen(false);
     setIsBatchDropdownOpen(false);
     setIsDayDropdownOpen(false);
     setIsTimeSlotDropdownOpen(false);
   };
 
-  // Handle classroom selection
-  const handleClassroomSelect = (classroom) => {
-    setSelectedClassroomLocal(classroom);
-    if (fetchDContext.setSelectedClassroom) {
-      fetchDContext.setSelectedClassroom(classroom);
-    }
-    setIsClassroomDropdownOpen(false);
-  };
-
-  // Handle batch selection
-  const handleBatchSelect = (batch) => {
-    setSelectedBatchLocal(batch);
-    if (fetchDContext.setSelectedBatch) {
-      fetchDContext.setSelectedBatch(batch);
-    }
-    setIsBatchDropdownOpen(false);
-  };
-
-  // Handle day selection
-  const handleDaySelect = (day) => {
-    setSelectedDayLocal(day);
-    if (fetchDContext.setSelectedDay) {
-      fetchDContext.setSelectedDay(day);
-    }
-    setIsDayDropdownOpen(false);
-  };
-
-  // Handle time slot selection
-  const handleTimeSlotSelect = (timeSlot) => {
-    setSelectedTimeSlotLocal(timeSlot);
-    if (fetchDContext.setSelectedTimeSlot) {
-      fetchDContext.setSelectedTimeSlot(timeSlot);
-    }
-    setIsTimeSlotDropdownOpen(false);
-  };
-
-  // Close all other dropdowns when opening one
   const openDropdown = (dropdown) => {
     setIsClassroomDropdownOpen(dropdown === "classroom");
     setIsBatchDropdownOpen(dropdown === "batch");
@@ -176,224 +142,303 @@ export default function ClassroomPickerScreen() {
     setIsTimeSlotDropdownOpen(dropdown === "timeSlot");
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Classroom Picker</Text>
+  const handleSelect = (type, value) => {
+    const setters = {
+      classroom: [
+        setSelectedClassroomLocal,
+        fetchDContext.setSelectedClassroom,
+      ],
+      batch: [setSelectedBatchLocal, fetchDContext.setSelectedBatch],
+      day: [setSelectedDayLocal, fetchDContext.setSelectedDay],
+      timeSlot: [setSelectedTimeSlotLocal, fetchDContext.setSelectedTimeSlot],
+    };
 
-      {/* Toggle between Classroom and Batch view */}
-      <View style={styles.toggleContainer}>
-        <Text style={styles.toggleLabel}>Classroom</Text>
-        <Switch
-          value={viewMode === "batch"}
-          onValueChange={toggleViewMode}
-          trackColor={{ false: "#CBD5E0", true: "#59788E" }}
-          thumbColor="#f4f3f4"
-        />
-        <Text style={styles.toggleLabel}>Batch</Text>
+    setters[type][0](value);
+    if (setters[type][1]) setters[type][1](value);
+    setIsClassroomDropdownOpen(false);
+    setIsBatchDropdownOpen(false);
+    setIsDayDropdownOpen(false);
+    setIsTimeSlotDropdownOpen(false);
+  };
+
+  return (
+    <View style={styles.mainContainer}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Classroom Picker</Text>
+          <Link href="/login" asChild>
+            <Pressable style={styles.logoutButton}>
+              <Image
+                source={require("@/assets/images/login-icon2.png")}
+                style={styles.logoutIcon}
+              />
+            </Pressable>
+          </Link>
+        </View>
       </View>
 
-      {/* Filter section */}
-      <View style={styles.filtersContainer}>
-        {/* Classroom/Batch Dropdown based on viewMode */}
-        {viewMode === "classroom" ? (
+      {/* Main Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* View Mode Toggle */}
+        <View style={styles.toggleContainer}>
+          <Text style={styles.toggleLabel}>Classroom</Text>
+          <Switch
+            value={viewMode === "batch"}
+            onValueChange={toggleViewMode}
+            trackColor={{ false: "#CBD5E0", true: "#59788E" }}
+            thumbColor="#f4f3f4"
+          />
+          <Text style={styles.toggleLabel}>Batch</Text>
+        </View>
+
+        {/* Filters */}
+        <View style={styles.filtersContainer}>
+          {/* Classroom/Batch Dropdown */}
           <TouchableOpacity
             style={styles.dropdownButton}
-            onPress={() => openDropdown("classroom")}
+            onPress={() =>
+              openDropdown(viewMode === "classroom" ? "classroom" : "batch")
+            }
           >
             <Text style={styles.dropdownButtonText}>
-              {selectedClassroom || "Select Classroom"}
+              {viewMode === "classroom"
+                ? selectedClassroom || "Select Classroom"
+                : selectedBatch || "Select Batch"}
             </Text>
           </TouchableOpacity>
-        ) : (
+
+          {/* Day Dropdown */}
           <TouchableOpacity
             style={styles.dropdownButton}
-            onPress={() => openDropdown("batch")}
+            onPress={() => openDropdown("day")}
           >
-            <Text style={styles.dropdownButtonText}>
-              {selectedBatch || "Select Batch"}
-            </Text>
+            <Text style={styles.dropdownButtonText}>{selectedDay}</Text>
           </TouchableOpacity>
+
+          {/* Time Slot Dropdown */}
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => openDropdown("timeSlot")}
+          >
+            <Text style={styles.dropdownButtonText}>{selectedTimeSlot}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Dropdown Menus */}
+        {isClassroomDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={styles.dropdownScroll}>
+              {classrooms.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dropdownItem}
+                  onPress={() => handleSelect("classroom", item)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedClassroom === item && styles.selectedItemText,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
 
-        {/* Day Dropdown */}
-        <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => openDropdown("day")}
-        >
-          <Text style={styles.dropdownButtonText}>
-            {selectedDay || "Select Day"}
-          </Text>
-        </TouchableOpacity>
+        {isBatchDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={styles.dropdownScroll}>
+              {batches.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dropdownItem}
+                  onPress={() => handleSelect("batch", item)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedBatch === item && styles.selectedItemText,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-        {/* Time Slot Dropdown */}
-        <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => openDropdown("timeSlot")}
-        >
-          <Text style={styles.dropdownButtonText}>
-            {selectedTimeSlot || "Select Time Slot"}
-          </Text>
-        </TouchableOpacity>
+        {isDayDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={styles.dropdownScroll}>
+              {days.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dropdownItem}
+                  onPress={() => handleSelect("day", item)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedDay === item && styles.selectedItemText,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {isTimeSlotDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={styles.dropdownScroll}>
+              {timeSlots.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.dropdownItem}
+                  onPress={() => handleSelect("timeSlot", item)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedTimeSlot === item && styles.selectedItemText,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Results Section */}
+        <Text style={styles.resultsTitle}>
+          {viewMode === "classroom"
+            ? `Available Slots for ${selectedClassroom || "All Classrooms"}`
+            : `Available Slots for ${selectedBatch || "All Batches"}`}
+        </Text>
+
+        {filteredResults.length > 0 ? (
+          <FlatList
+            data={filteredResults}
+            scrollEnabled={false}
+            keyExtractor={(item, index) =>
+              `${item.day}-${item.free_start}-${index}`
+            }
+            renderItem={({ item }) => (
+              <View style={styles.resultCard}>
+                <View style={styles.resultHeader}>
+                  <Text style={styles.resultDay}>{item.day}</Text>
+                  <Text style={styles.resultType}>
+                    {viewMode === "classroom"
+                      ? item.classroom_name
+                      : item.batch_name}
+                  </Text>
+                </View>
+                <View style={styles.resultTime}>
+                  <Text style={styles.resultTimeText}>
+                    {item.free_start.substring(0, 5)} -{" "}
+                    {item.free_end.substring(0, 5)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          />
+        ) : (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>
+              No available slots match your filters
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Footer Navigation */}
+      <View style={styles.footer}>
+        <Link href="/" asChild>
+          <Pressable style={styles.footerButton}>
+            <Text style={styles.footerButtonText}>Home</Text>
+          </Pressable>
+        </Link>
+        <Link href="/TT" asChild>
+          <Pressable style={styles.footerButton}>
+            <Text style={styles.footerButtonText}>Time Table</Text>
+          </Pressable>
+        </Link>
+        <Link href="/CP" asChild>
+          <Pressable style={styles.footerButton}>
+            <Text style={styles.footerButtonText}>Classroom</Text>
+          </Pressable>
+        </Link>
       </View>
-
-      {/* Dropdown Content */}
-      {isClassroomDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={styles.dropdownScroll}>
-            {classrooms.map((classroom, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dropdownItem}
-                onPress={() => handleClassroomSelect(classroom)}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    selectedClassroom === classroom && styles.selectedItemText,
-                  ]}
-                >
-                  {classroom}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {isBatchDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={styles.dropdownScroll}>
-            {batches.map((batch, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dropdownItem}
-                onPress={() => handleBatchSelect(batch)}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    selectedBatch === batch && styles.selectedItemText,
-                  ]}
-                >
-                  {batch}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {isDayDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={styles.dropdownScroll}>
-            {days.map((day, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dropdownItem}
-                onPress={() => handleDaySelect(day)}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    selectedDay === day && styles.selectedItemText,
-                  ]}
-                >
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {isTimeSlotDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={styles.dropdownScroll}>
-            {timeSlots.map((timeSlot, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dropdownItem}
-                onPress={() => handleTimeSlotSelect(timeSlot)}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    selectedTimeSlot === timeSlot && styles.selectedItemText,
-                  ]}
-                >
-                  {timeSlot}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Results Section */}
-      <Text style={styles.resultsTitle}>
-        {viewMode === "classroom"
-          ? `Available Slots for ${selectedClassroom || "All Classrooms"}`
-          : `Available Slots for ${selectedBatch || "All Batches"}`}
-      </Text>
-
-      {filteredResults.length > 0 ? (
-        <FlatList
-          data={filteredResults}
-          keyExtractor={(item, index) =>
-            `${item.day}-${item.free_start}-${index}`
-          }
-          renderItem={({ item }) => (
-            <View style={styles.resultCard}>
-              <View style={styles.resultHeader}>
-                <Text style={styles.resultDay}>{item.day}</Text>
-                <Text style={styles.resultType}>
-                  {viewMode === "classroom"
-                    ? item.classroom_name
-                    : item.batch_name}
-                </Text>
-              </View>
-              <View style={styles.resultTime}>
-                <Text style={styles.resultTimeText}>
-                  {item.free_start.substring(0, 5)} -{" "}
-                  {item.free_end.substring(0, 5)}
-                </Text>
-              </View>
-            </View>
-          )}
-        />
-      ) : (
-        <View style={styles.noResultsContainer}>
-          <Text style={styles.noResultsText}>
-            No available slots match your filters
-          </Text>
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    height: 120,
+    backgroundColor: "#2a96a7",
+    justifyContent: "center",
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    width: "100%",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "white",
+  },
+  logoutButton: {
+    position: "absolute",
+    right: 20,
+  },
+  logoutIcon: {
+    width: 30,
+    height: 30,
+    tintColor: "white",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
     padding: 16,
-    backgroundColor: "#F5F7FA",
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f8f9fa",
   },
   loadingText: {
     fontSize: 18,
     color: "#59788E",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#59788E",
-    textAlign: "center",
-    marginBottom: 20,
   },
   toggleContainer: {
     flexDirection: "row",
@@ -443,6 +488,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     zIndex: 10,
     marginBottom: 10,
+    maxHeight: 200,
   },
   dropdownScroll: {
     maxHeight: 200,
@@ -520,5 +566,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#718096",
     textAlign: "center",
+  },
+  footer: {
+    width: "100%",
+    backgroundColor: "#2a96a7",
+    paddingVertical: 14,
+    paddingBottom: Platform.OS === "ios" ? 28 : 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.2)",
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  footerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  footerButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

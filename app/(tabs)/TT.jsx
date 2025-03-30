@@ -1,4 +1,3 @@
-// TimeTableScreen.jsx
 import {
   StyleSheet,
   View,
@@ -6,12 +5,19 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  Dimensions,
+  Image,
+  Pressable,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useContext, useCallback } from "react";
-import { ThemedText } from "@/components/ThemedText";
-import { FetchD } from "../../context/FetchD";
+import { FetchD } from "@/context/FetchD";
+import { Link } from "expo-router";
 
 export default function TimeTableScreen() {
+  const { width } = Dimensions.get("window");
+  const isSmallScreen = width < 600;
+
   const [viewMode, setViewMode] = useState("classroom");
   const [selectedClassroom, setSelectedClassroom] = useState(null);
   const [isClassroomDropdownOpen, setIsClassroomDropdownOpen] = useState(false);
@@ -112,174 +118,246 @@ export default function TimeTableScreen() {
   };
 
   return (
-    <View style={styles.container} key={key}>
-      <ThemedText style={styles.title}>Time Table</ThemedText>
-
-      <View style={styles.toggleContainer}>
-        <Text style={styles.toggleLabel}>Classroom</Text>
-        <Switch
-          value={viewMode === "batch"}
-          onValueChange={toggleViewMode}
-          trackColor={{ false: "#767577", true: "#59788E" }}
-          thumbColor="#f4f3f4"
-        />
-        <Text style={styles.toggleLabel}>Batch</Text>
+    <View style={styles.mainContainer} key={key}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Time Table</Text>
+          <Link href="/login" asChild>
+            <Pressable style={styles.logoutButton}>
+              <Image
+                source={require("@/assets/images/login-icon2.png")}
+                style={styles.logoutIcon}
+              />
+            </Pressable>
+          </Link>
+        </View>
       </View>
 
-      {viewMode === "classroom" ? (
-        <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => setIsClassroomDropdownOpen(!isClassroomDropdownOpen)}
-        >
-          <Text style={styles.dropdownButtonText}>
-            {selectedClassroom || "Select a Classroom"}
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => setIsBatchDropdownOpen(!isBatchDropdownOpen)}
-        >
-          <Text style={styles.dropdownButtonText}>
-            {selectedBatch || "Select a Batch"}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {isClassroomDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={{ maxHeight: 200 }}>
-            {uniqueClassrooms.map((room, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.slotItem}
-                onPress={() => handleClassroomChange(room)}
-              >
-                <Text
-                  style={[
-                    styles.slotText,
-                    selectedClassroom === room && styles.selectedItemText,
-                  ]}
-                >
-                  {room}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+      {/* Main Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={styles.toggleContainer}>
+          <Text style={styles.toggleLabel}>Classroom</Text>
+          <Switch
+            value={viewMode === "batch"}
+            onValueChange={toggleViewMode}
+            trackColor={{ false: "#767577", true: "#59788E" }}
+            thumbColor="#f4f3f4"
+          />
+          <Text style={styles.toggleLabel}>Batch</Text>
         </View>
-      )}
 
-      {isBatchDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <ScrollView style={{ maxHeight: 200 }}>
-            {uniqueBatches.map((batch, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.slotItem}
-                onPress={() => handleBatchChange(batch)}
-              >
-                <Text
-                  style={[
-                    styles.slotText,
-                    selectedBatch === batch && styles.selectedItemText,
-                  ]}
-                >
-                  {batch}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <View style={styles.timetableContainer}>
-        <ScrollView style={styles.outerScrollView}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={true}
-            style={styles.innerScrollView}
+        {viewMode === "classroom" ? (
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => {
+              setIsClassroomDropdownOpen(!isClassroomDropdownOpen);
+              setIsBatchDropdownOpen(false);
+            }}
           >
-            <View style={styles.grid}>
-              <View style={styles.gridRow}>
-                <View style={styles.headerCell}>
-                  <Text style={styles.headerCellText}>Time</Text>
+            <Text style={styles.dropdownButtonText}>
+              {selectedClassroom || "Select a Classroom"}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => {
+              setIsBatchDropdownOpen(!isBatchDropdownOpen);
+              setIsClassroomDropdownOpen(false);
+            }}
+          >
+            <Text style={styles.dropdownButtonText}>
+              {selectedBatch || "Select a Batch"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {isClassroomDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={{ maxHeight: 200 }}>
+              {uniqueClassrooms.map((room, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.slotItem}
+                  onPress={() => handleClassroomChange(room)}
+                >
+                  <Text
+                    style={[
+                      styles.slotText,
+                      selectedClassroom === room && styles.selectedItemText,
+                    ]}
+                  >
+                    {room}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {isBatchDropdownOpen && (
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={{ maxHeight: 200 }}>
+              {uniqueBatches.map((batch, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.slotItem}
+                  onPress={() => handleBatchChange(batch)}
+                >
+                  <Text
+                    style={[
+                      styles.slotText,
+                      selectedBatch === batch && styles.selectedItemText,
+                    ]}
+                  >
+                    {batch}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <View style={styles.timetableContainer}>
+          <ScrollView style={styles.outerScrollView}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={true}
+              style={styles.innerScrollView}
+            >
+              <View style={styles.grid}>
+                <View style={styles.gridRow}>
+                  <View style={styles.headerCell}>
+                    <Text style={styles.headerCellText}>Time</Text>
+                  </View>
+                  {days.map((day, index) => (
+                    <View key={index} style={styles.headerCell}>
+                      <Text style={styles.headerCellText}>{day}</Text>
+                    </View>
+                  ))}
                 </View>
-                {days.map((day, index) => (
-                  <View key={index} style={styles.headerCell}>
-                    <Text style={styles.headerCellText}>{day}</Text>
+
+                {timeSlots.map((slot, rowIndex) => (
+                  <View key={rowIndex} style={styles.gridRow}>
+                    <View style={styles.timeSlotCell}>
+                      <Text style={styles.timeSlotText}>{slot}</Text>
+                    </View>
+                    {days.map((day, colIndex) => {
+                      const entry = timetable.find(
+                        (item) =>
+                          item.day === day && matchesTimeSlot(item, slot)
+                      );
+
+                      return (
+                        <View
+                          key={`${day}-${slot}-${colIndex}`}
+                          style={[styles.gridCell, entry && styles.filledCell]}
+                        >
+                          {entry ? (
+                            <>
+                              <Text style={styles.subjectText}>
+                                {entry.teacher_name}
+                              </Text>
+                              <Text style={styles.teacherText}>
+                                {viewMode === "classroom"
+                                  ? entry.subject_name
+                                  : entry.classroom_name}
+                              </Text>
+                              <Text style={styles.batchTeacherText}>
+                                {entry.batch_name}
+                              </Text>
+                            </>
+                          ) : null}
+                        </View>
+                      );
+                    })}
                   </View>
                 ))}
               </View>
-
-              {timeSlots.map((slot, rowIndex) => (
-                <View key={rowIndex} style={styles.gridRow}>
-                  <View style={styles.timeSlotCell}>
-                    <Text style={styles.timeSlotText}>{slot}</Text>
-                  </View>
-                  {days.map((day, colIndex) => {
-                    const entry = timetable.find(
-                      (item) => item.day === day && matchesTimeSlot(item, slot)
-                    );
-
-                    return (
-                      <View
-                        key={`${day}-${slot}-${colIndex}`}
-                        style={[styles.gridCell, entry && styles.filledCell]}
-                      >
-                        {entry ? (
-                          <>
-                            <Text style={styles.subjectText}>
-                              {entry.teacher_name}
-                            </Text>
-                            <Text style={styles.teacherText}>
-                              {viewMode === "classroom"
-                                ? entry.subject_name
-                                : entry.classroom_name}
-                            </Text>
-                            <Text style={styles.batchTeacherText}>
-                              {entry.batch_name}
-                            </Text>
-                          </>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
+            </ScrollView>
           </ScrollView>
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
 
-      {/* <View style={styles.debugContainer}>
-        <Text style={styles.debugText}>
-          Mode: {viewMode} | Selected:{" "}
-          {viewMode === "classroom" ? selectedClassroom : selectedBatch}
-        </Text>
-        <Text style={styles.debugText}>Entries: {timetable.length}</Text>
-      </View> */}
+      {/* Footer Navigation */}
+      <View style={styles.footer}>
+        <View style={styles.footerContent}>
+          <Link href="/" asChild>
+            <Pressable style={styles.footerButton}>
+              <Text style={styles.footerButtonText}>Dashboard</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/TT" asChild>
+            <Pressable style={styles.footerButton}>
+              <Text style={styles.footerButtonText}>Time Table</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/CP" asChild>
+            <Pressable style={styles.footerButton}>
+              <Text style={styles.footerButtonText}>Classroom</Text>
+            </Pressable>
+          </Link>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f8f9fa",
   },
-  title: {
+  header: {
+    height: 120,
+    backgroundColor: "#2a96a7",
+    justifyContent: "center",
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    width: "100%",
+  },
+  headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#59788E",
-    textAlign: "center",
-    marginBottom: 20,
+    color: "white",
+  },
+  logoutButton: {
+    position: "absolute",
+    right: 20,
+  },
+  logoutIcon: {
+    width: 30,
+    height: 30,
+    tintColor: "white",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 20,
   },
   toggleContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginVertical: 20,
   },
   toggleLabel: {
     fontSize: 16,
@@ -288,7 +366,8 @@ const styles = StyleSheet.create({
     color: "#59788E",
   },
   dropdownButton: {
-    width: "100%",
+    width: "90%",
+    alignSelf: "center",
     marginVertical: 10,
     borderWidth: 1,
     borderColor: "#CBD5E0",
@@ -308,6 +387,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   dropdownContainer: {
+    width: "90%",
+    alignSelf: "center",
     marginTop: 5,
     backgroundColor: "white",
     borderRadius: 8,
@@ -336,9 +417,9 @@ const styles = StyleSheet.create({
   },
   timetableContainer: {
     flex: 1,
-    marginTop: 20,
+    margin: 16,
     backgroundColor: "white",
-    borderRadius: 8,
+    borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -361,7 +442,7 @@ const styles = StyleSheet.create({
     minHeight: 80,
   },
   headerCell: {
-    width: 100,
+    width: 120,
     padding: 12,
     backgroundColor: "#59788E",
     justifyContent: "center",
@@ -375,7 +456,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   timeSlotCell: {
-    width: 100,
+    width: 120,
     padding: 10,
     justifyContent: "center",
     alignItems: "center",
@@ -390,7 +471,7 @@ const styles = StyleSheet.create({
     color: "#4A5568",
   },
   gridCell: {
-    width: 100,
+    width: 120,
     height: 80,
     justifyContent: "center",
     alignItems: "center",
@@ -422,14 +503,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontStyle: "italic",
   },
-  debugContainer: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: "#1A202C",
-    borderRadius: 4,
+  footer: {
+    width: "100%",
+    backgroundColor: "#2a96a7",
+    paddingVertical: 14,
+    paddingBottom: Platform.OS === "ios" ? 28 : 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.2)",
   },
-  debugText: {
-    color: "#A0AEC0",
-    fontSize: 12,
+  footerContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+  },
+  footerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  footerButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

@@ -23,15 +23,25 @@ export interface Slot {
   start_time: string;
   end_time: string;
   id?: string;
-  subject_id?: string;
   teacher_id?: string;
+  subject_id?: string;
+}
+export interface Slot2 {
+  batch_id: string;
+  classroom_id: string;
+  day: string;
+  start_time: string;
+  end_time: string;
+  id: string;
+  teacher_id: string;
+  subject_id: string;
 }
 
 export const FetchDProvider = ({ children }: { children: ReactNode }) => {
   const [freeSlots, setFreeSlots] = useState<Slot[]>([]);
   const [filteredSlots, setFilteredSlots] = useState<Slot[]>([]);
-  const [bookedSlots, setBookedSlots] = useState<Slot[]>([]);
-  const [filteredBookedSlots, setFilteredBookedSlots] = useState<Slot[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<Slot2[]>([]);
+  const [filteredBookedSlots, setFilteredBookedSlots] = useState<Slot2[]>([]);
   const [freeBatchSlots, setFreeBatchSlots] = useState<Slot[]>([]);
   const [filteredBatchSlots, setFilteredBatchSlots] = useState<Slot[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>("All");
@@ -63,8 +73,27 @@ export const FetchDProvider = ({ children }: { children: ReactNode }) => {
     fetch("http://192.168.0.210:5000/allTimeSlots")
       .then((response) => response.json())
       .then((data: Slot[]) => {
-        setBookedSlots(data);
-        setFilteredBookedSlots(data);
+        // console.log("Fetched booked slots:", data);
+        setBookedSlots(
+          data.map((slot) => ({
+            ...slot,
+            batch_id: slot.batch_id || "",
+            classroom_id: slot.classroom_id || "",
+            id: slot.id || "",
+            teacher_id: slot.teacher_id || "",
+            subject_id: slot.subject_id || "",
+          }))
+        );
+        setFilteredBookedSlots(
+          data.map((slot) => ({
+            ...slot,
+            batch_id: slot.batch_id || "",
+            classroom_id: slot.classroom_id || "",
+            id: slot.id || "",
+            teacher_id: slot.teacher_id || "",
+            subject_id: slot.subject_id || "",
+          }))
+        );
       })
       .catch((error) => console.error("Error fetching booked slots:", error));
   }, []);

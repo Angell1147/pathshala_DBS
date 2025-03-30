@@ -1,6 +1,16 @@
 import { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons"; // Make sure to install @expo/vector-icons if not already
 
 const BACKEND_URL = process.env.BACKEND_URL;
 export default function LoginScreen() {
@@ -9,7 +19,7 @@ export default function LoginScreen() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const BACKEND_URL = "http://192.168.0.210:5000";
+  const BACKEND_URL = "http://127.0.0.1:5000";
 
   // Function to send OTP
   const handleSendOTP = async () => {
@@ -55,6 +65,9 @@ export default function LoginScreen() {
       const data = await response.json();
       if (response.ok) {
         router.replace("/Tindex");
+        await AsyncStorage.setItem("session_token", data.session_token);
+        localStorage.setItem("session_token", data.session_token);
+        console.log("Login successful:", data);
       } else {
         setError(data.message || "Incorrect OTP. Try again.");
       }
@@ -65,6 +78,11 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Login</Text>
 
       {/* Email Input */}
@@ -125,5 +143,11 @@ const styles = StyleSheet.create({
   error: {
     color: "red",
     marginTop: 10,
+  },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    padding: 10,
   },
 });
