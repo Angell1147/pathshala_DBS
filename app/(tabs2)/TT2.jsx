@@ -184,6 +184,44 @@ export default function TimeTableScreen() {
     }
   };
 
+  // handle slot deletion
+  const deleteSlot = async (slot) => {
+    try {
+      const sessionId = await AsyncStorage.getItem("session_token");
+      if (!sessionId) throw new Error("No session token");
+
+      const response = await fetch("http://127.0.0.1:5000/delete_time_slot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify({
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          day: slot.day,
+          subject_name: slot.subject_name,
+          classroom_name: slot.classroom_name,
+          batch_name: slot.batch_name,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        Alert.alert("Error", "Failed to delete the slot. Please try again.");
+        return;
+      }
+
+      // Refresh timetable after deletion
+      await forceRenderAllCells();
+      Alert.alert("Success", "Slot deleted successfully.");
+    } catch (error) {
+      console.error("Delete error:", error);
+      Alert.alert("Error", "Network error. Please try again.");
+    }
+  };
+
   // Helper functions
   const matchesTimeSlot = (slot, timeSlotStr) => {
     const [startTime] = timeSlotStr.split(" - ");
@@ -549,7 +587,7 @@ export default function TimeTableScreen() {
                           entry ? entry.subject_name : "empty"
                         }`}
                         style={[styles.gridCell, entry && styles.filledCell]}
-                        onPress={() => openModal(day, slot)}
+                        onPress={() => !entry && openModal(day, slot)}
                       >
                         {entry ? (
                           <>
@@ -564,6 +602,16 @@ export default function TimeTableScreen() {
                             <Text style={styles.batchTeacherText}>
                               {entry.teacher_name}
                             </Text>
+                            {/* Add delete button */}
+                            <TouchableOpacity
+                              style={styles.deleteButton}
+                              onPress={() => deleteSlot(entry)}
+                            >
+                              <Image
+                                source={require("@/assets/images/delete-icon.svg")}
+                                style={styles.deleteIcon}
+                              />
+                            </TouchableOpacity>
                           </>
                         ) : (
                           <Text style={styles.emptyCell}>+</Text>
@@ -812,6 +860,19 @@ const styles = StyleSheet.create({
   emptyCell: {
     fontSize: 20,
     color: "#CBD5E0",
+  },
+  deleteButton: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    padding: 5,
+    backgroundColor: "#4682B4",
+    borderRadius: 15,
+  },
+  deleteIcon: {
+    width: 12,
+    height: 12,
+    tintColor: "white",
   },
   footer: {
     width: "100%",

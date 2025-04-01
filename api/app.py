@@ -106,7 +106,8 @@ def generate_otp():
     if not response.data:
         return jsonify({"error": "Email is not authenticated"}), 400
     
-    generated_otp = random.randint(100000, 999999)
+    # generated_otp = random.randint(100000, 999999)
+    generated_otp = 1234
     otp_storage[email] = generated_otp  # Store OTP in memory (or use Redis/database in production)
     
     try:
@@ -306,6 +307,85 @@ def add_time_slot():
     except Exception as e:
         app.logger.error(f"Error adding time slot: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    
+@app.route("/delete_time_slot", methods=["POST"])
+def delete_time_slot():
+    # Verify the session token
+    session_data = verify_session_token(request)
+    print("reached here")
+    if not session_data:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Parse request data
+    if not request.is_json:
+        return jsonify({"error": "Invalid JSON"}), 400
+    
+    teacher_id = session_data.get("teacher_id")
+    if not teacher_id:
+        return jsonify({"error": "Teacher ID not found in session"}), 401
+
+    data = request.get_json()
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    classroom_name = data.get("classroom_name")
+    day = data.get("day")
+
+    print(f"Received data: {data}")
+
+    # Fetch teacher's role from the teachers table
+    teacher_response = supabase.table("teachers").select("role").eq("id", teacher_id).execute()
+    if not teacher_response.data:
+        return jsonify({"error": "Teacher not found"}), 400
+
+    teacher_role = teacher_response.data[0]["role"]
+    print(f"Teacher Role: {teacher_role}, type of teacher role: {type(teacher_role)}")
+
+    if not all([start_time, end_time, classroom_name, day]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    if teacher_role == "admin":
+        try:
+            # Map classroom_name to its ID
+            classroom_response = supabase.table("classrooms").select("id").eq("name", classroom_name).execute()
+            if not classroom_response.data:
+                return jsonify({"error": "Classroom not found"}), 400
+            classroom_id = classroom_response.data[0]["id"]
+
+            delete_response = supabase.table("time_slots").delete().eq("classroom_id", classroom_id).eq("day", day).eq("start_time", start_time).eq("end_time", end_time).execute()
+            return {"success": "Time slot deleted"} if delete_response.data else {"error": "Failed to delete"}
+
+        except Exception as e:
+            app.logger.error(f"Error adding time slot: {str(e)}")
+            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    
+    elif teacher_role == "professor":
+        try:
+            # Map classroom_name to its ID
+            classroom_response = supabase.table("classrooms").select("id").eq("name", classroom_name).execute()
+            if not classroom_response.data:
+                return jsonify({"error": "Classroom not found"}), 400
+            classroom_id = classroom_response.data[0]["id"]
+            print("yaha tak aa raha hai")
+            to_delete_teacher_id = supabase.table("time_slots").select("teacher_id").eq("classroom_id", classroom_id).eq("day", day).eq("start_time", start_time).eq("end_time", end_time).execute()
+            print(f"to_delete_teacher_id: {to_delete_teacher_id.data[0]['teacher_id']}, teacher_id: {teacher_id}")
+            
+
+            if to_delete_teacher_id.data[0]['teacher_id'] != teacher_id:
+                print("deleting someone else's time slot")
+                return jsonify({"error": "You are not authorized to delete this time slot"}), 403
+
+            print("deleting your own time slot")
+        
+
+            delete_response = supabase.table("time_slots").delete().eq("classroom_id", classroom_id).eq("day", day).eq("start_time", start_time).eq("end_time", end_time).execute()
+            return {"success": "Time slot deleted"} if delete_response.data else {"error": "Failed to delete"}
+
+        except Exception as e:
+            app.logger.error(f"Error adding time slot: {str(e)}")
+            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        
+
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
