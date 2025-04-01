@@ -103,7 +103,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Footer Navigation */}
-      <View style={styles.footer}>
+      {/* <View style={styles.footer}>
         <View style={styles.footerContent}>
           <Link href="/" asChild>
             <Pressable style={styles.footerButton}>
@@ -123,7 +123,7 @@ export default function HomeScreen() {
             </Pressable>
           </Link>
         </View>
-      </View>
+      </View> */}
     </View>
   );
 }
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   card: {
-    width: 300,
-    height: 220,
+    width: 330,
+    height: 260,
     backgroundColor: "#2a96a7",
     borderRadius: 12,
     overflow: "hidden",
@@ -204,17 +204,17 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   cardImageContainer: {
-    width: 120,
-    height: 80,
+    width: 180,
+    height: 120,
     borderRadius: 8,
     marginBottom: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(170, 223, 247, 0.2)",
   },
   cardTitle: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "ittalic",
     color: "white",
     marginBottom: 8,
     textAlign: "center",

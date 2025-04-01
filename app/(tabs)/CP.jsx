@@ -136,10 +136,10 @@ export default function ClassroomPickerScreen() {
   };
 
   const openDropdown = (dropdown) => {
-    setIsClassroomDropdownOpen(dropdown === "classroom");
-    setIsBatchDropdownOpen(dropdown === "batch");
-    setIsDayDropdownOpen(dropdown === "day");
-    setIsTimeSlotDropdownOpen(dropdown === "timeSlot");
+    setIsClassroomDropdownOpen((prev) => (dropdown === "classroom" ? !prev : false));
+    setIsBatchDropdownOpen((prev) => (dropdown === "batch" ? !prev : false));
+    setIsDayDropdownOpen((prev) => (dropdown === "day" ? !prev : false));
+    setIsTimeSlotDropdownOpen((prev) => (dropdown === "timeSlot" ? !prev : false));
   };
 
   const handleSelect = (type, value) => {
@@ -211,21 +211,23 @@ export default function ClassroomPickerScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Day Dropdown */}
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => openDropdown("day")}
-          >
-            <Text style={styles.dropdownButtonText}>{selectedDay}</Text>
-          </TouchableOpacity>
+          <View style={styles.filtersRow}>
+            {/* Day Dropdown */}
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => openDropdown("day")}
+            >
+              <Text style={styles.dropdownButtonText}>Day: {selectedDay}</Text>
+            </TouchableOpacity>
 
-          {/* Time Slot Dropdown */}
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => openDropdown("timeSlot")}
-          >
-            <Text style={styles.dropdownButtonText}>{selectedTimeSlot}</Text>
-          </TouchableOpacity>
+            {/* Time Slot Dropdown */}
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => openDropdown("timeSlot")}
+            >
+              <Text style={styles.dropdownButtonText}>Time Slot : {selectedTimeSlot}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Dropdown Menus */}
@@ -453,7 +455,7 @@ const styles = StyleSheet.create({
     color: "#59788E",
   },
   filtersContainer: {
-    marginBottom: 10,
+    marginBottom: 5,
   },
   dropdownButton: {
     width: "100%",
@@ -587,5 +589,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
     fontSize: 14,
+  },
+  filtersRow: {
+    flexDirection: "row",
+    spaceBetween: 20,
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "50%",
   },
 });
