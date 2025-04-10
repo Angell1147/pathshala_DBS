@@ -2,7 +2,7 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+## Get started With Frontend
 
 1. Install dependencies
 
@@ -25,15 +25,46 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## Get started With Backend
 
-When you're ready, run:
+1. Go to api folder
 
-```bash
-npm run reset-project
-```
+   ```bash
+   cd api
+   ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Create Virtual Python Environment
+
+   ```bash
+   python3 -m venv venv
+   ```
+
+3. Initiate the Python Environment
+
+   For macOS:
+   ```bash
+   source venv/bin/activate
+   ```
+
+   For Windows:
+   ```bash
+   venv\Scripts\activate
+   ```
+
+4. Install required Dependencies
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. Run the file
+
+   ```bash
+   flask run
+   ```
+
+
+These commands will start the backend flask server. 
 
 ## Learn more
 
